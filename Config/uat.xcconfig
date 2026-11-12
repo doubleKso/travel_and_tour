@@ -1,0 +1,11 @@
+// Build settings for the uat flavor — mirrors ios/Flutter/uatRelease.xcconfig.
+// Selected by the EpicWorld-uat scheme (Debug-uat / Release-uat).
+
+APP_FLAVOR = uat
+BUNDLE_DISPLAY_NAME = Epic World UAT
+PRODUCT_BUNDLE_IDENTIFIER = com.systematic.epicWorld.dev
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon-uat
+
+// Google Sign-In callback scheme — must match REVERSED_CLIENT_ID in
+// Config/Firebase/uat/GoogleService-Info.plist.
+GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.75564183650-7imhkdtjv26c4j3bme5d3hs38j2sebdi

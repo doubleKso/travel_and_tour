@@ -1,0 +1,11 @@
+// Build settings for the prod flavor — mirrors ios/Flutter/prodRelease.xcconfig.
+// Selected by the EpicWorld-prod scheme (Debug-prod / Release-prod).
+
+APP_FLAVOR = prod
+BUNDLE_DISPLAY_NAME = Epic World
+PRODUCT_BUNDLE_IDENTIFIER = com.systematic.epicWorld
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon-prod
+
+// Google Sign-In callback scheme — must match REVERSED_CLIENT_ID in
+// Config/Firebase/prod/GoogleService-Info.plist.
+GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.75564183650-2vdr8j8qk3hvecn8krv7gvei1sjv87re

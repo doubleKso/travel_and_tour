@@ -1,0 +1,171 @@
+# XcodeGen spec for the native iOS app. Generate the Xcode project on a Mac:
+#
+#   brew install xcodegen
+#   cd ios_native && xcodegen
+#   open EpicWorld.xcodeproj
+#
+# The generated EpicWorld.xcodeproj is not committed — this file is the
+# source of truth, so project changes are reviewable text.
+name: EpicWorld
+
+options:
+  bundleIdPrefix: com.systematic
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  groupSortPosition: top
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "10"
+    DEVELOPMENT_TEAM: 583K72PK3Z
+    TARGETED_DEVICE_FAMILY: "1,2"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    SWIFT_STRICT_CONCURRENCY: minimal
+    DEAD_CODE_STRIPPING: YES
+
+# One Debug/Release pair per flavor, as in ios/Runner (prodDebug, uatRelease …).
+configs:
+  Debug-prod: debug
+  Release-prod: release
+  Debug-uat: debug
+  Release-uat: release
+  Debug-qa: debug
+  Release-qa: release
+
+configFiles:
+  Debug-prod: Config/prod.xcconfig
+  Release-prod: Config/prod.xcconfig
+  Debug-uat: Config/uat.xcconfig
+  Release-uat: Config/uat.xcconfig
+  Debug-qa: Config/qa.xcconfig
+  Release-qa: Config/qa.xcconfig
+
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: "11.0.0"
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: "8.0.0"
+
+targets:
+  EpicWorld:
+    type: application
+    platform: iOS
+    sources:
+      - path: EpicWorld
+        excludes:
+          - "Resources/assets/**"
+          - "Resources/l10n/**"
+          - "Resources/Info.plist"
+          - "Resources/EpicWorld.entitlements"
+          - "Resources/DeviceDebug.entitlements"
+          - "Resources/Fonts/*.txt"
+      # Folder references keep the Flutter paths intact inside the bundle:
+      # assets/images/b4.jpg, l10n/en.json.
+      - path: EpicWorld/Resources/assets
+        type: folder
+        buildPhase: resources
+      - path: EpicWorld/Resources/l10n
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        INFOPLIST_FILE: EpicWorld/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: EpicWorld/Resources/EpicWorld.entitlements
+        CODE_SIGN_STYLE: Automatic
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: ""
+      configs:
+        Debug-prod: { APS_ENVIRONMENT: development, SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG }
+        Debug-uat: { APS_ENVIRONMENT: development, SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG }
+        Debug-qa:
+          APS_ENVIRONMENT: development
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+          DEVELOPMENT_TEAM: CN2G7NR8JR
+          PRODUCT_BUNDLE_IDENTIFIER: com.devkkso.epicworld.qa
+          CODE_SIGN_ENTITLEMENTS: EpicWorld/Resources/DeviceDebug.entitlements
+        Release-prod: { APS_ENVIRONMENT: production }
+        Release-uat: { APS_ENVIRONMENT: production }
+        Release-qa: { APS_ENVIRONMENT: production }
+    dependencies:
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFunctions
+      - package: Firebase
+        product: FirebaseMessaging
+      - package: GoogleSignIn
+        product: GoogleSignIn
+    postCompileScripts:
+      # Keep one GoogleService-Info.plist per flavor under Config/Firebase;
+      # copy the active one into the bundle.
+      - name: Copy flavor GoogleService-Info.plist
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - $(SRCROOT)/Config/Firebase/$(APP_FLAVOR)/GoogleService-Info.plist
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist
+        script: |
+          set -euo pipefail
+          SRC="${SRCROOT}/Config/Firebase/${APP_FLAVOR}/GoogleService-Info.plist"
+          if [ ! -f "$SRC" ]; then
+            echo "error: missing $SRC" >&2
+            exit 1
+          fi
+          DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist"
+          cp "$SRC" "$DEST"
+          /usr/libexec/PlistBuddy -c "Set :BUNDLE_ID ${PRODUCT_BUNDLE_IDENTIFIER}" "$DEST"
+
+  EpicWorldTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: EpicWorldTests
+    dependencies:
+      - target: EpicWorld
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/EpicWorld.app/EpicWorld
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.systematic.epicWorld.tests
+
+schemes:
+  EpicWorld-prod:
+    build:
+      targets:
+        EpicWorld: all
+        EpicWorldTests: [test]
+    run: { config: Debug-prod }
+    test: { config: Debug-prod, targets: [EpicWorldTests] }
+    profile: { config: Release-prod }
+    analyze: { config: Debug-prod }
+    archive: { config: Release-prod }
+  EpicWorld-uat:
+    build:
+      targets:
+        EpicWorld: all
+        EpicWorldTests: [test]
+    run: { config: Debug-uat }
+    test: { config: Debug-uat, targets: [EpicWorldTests] }
+    profile: { config: Release-uat }
+    analyze: { config: Debug-uat }
+    archive: { config: Release-uat }
+  EpicWorld-qa:
+    build:
+      targets:
+        EpicWorld: all
+        EpicWorldTests: [test]
+    run: { config: Debug-qa }
+    test: { config: Debug-qa, targets: [EpicWorldTests] }
+    profile: { config: Release-qa }
+    analyze: { config: Debug-qa }
+    archive: { config: Release-qa }
